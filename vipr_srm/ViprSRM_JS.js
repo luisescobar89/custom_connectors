@@ -15,36 +15,46 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 	// test the connection with the target monitor
 	testConnection : function() {
 		
-		ms.log("Connector testing connection");
+		ms.log("ViPRSRMJS testing connection");
+
+		var query = this.getQueryForTestConnection(query);
+		ms.log("ViPRSRMJS testConnection query: " + query);
 		
 		var retVal = {};
 		
 		try {
-			
-			//TODO: run test query
-			
-			if (true){ //TODO: validate the request response
-				retVal['status']  = SUCCESS.toString();
-		}
-		else{
-			this.addError(response.getErrorMessage());
-			retVal['status']  = FAILURE.toString();
-		}
-		
-	} catch (e) {
-		this.addError(e.toString());
-		retVal['status'] = FAILURE.toString();
-	}
+			var response = this.getResponse(query);
+			if (response == null){
+				retVal['status']  = FAILURE.toString();
+				retVal['error_message'] = errorMessage;
+				return retVal;
+			}
 	
-	ms.log("Connector Connector testConnection " + retVal['status'] );
-	if (retVal['status'] === FAILURE.toString())
-		retVal['error_message'] = errorMessage;
-	return retVal;
+			ms.log('ViPRSRMJS Connector Testing Connection response:' + response.getBody());		 
+			ms.log('result:' + response.getStatusCode());
+	
+			if (response.getStatusCode() === 200){
+				retVal['status']  = SUCCESS.toString();
+			}
+			else{
+				retVal['status']  = FAILURE.toString();
+				this.addError('ViPRSRMJS Connector Test Connection response code: ' + response.getStatusCode());
+			}
+			if (retVal['status'] === FAILURE.toString())
+				retVal['error_message'] = errorMessage;
+			return retVal;
+	
+		} catch (e) {
+			this.addError("Failed to connect to ViPR SRM");
+			this.addError(e);
+			retVal['status'] = FAILURE.toString();
+			retVal['error_message'] = errorMessage;
+		}
 },
 
 execute: function() {
 	
-	ms.log("Connector Connector: execute connection ...");
+	ms.log("ViPRSRMJS Connector Connector: execute connection ...");
 	
 	var retVal = {};
 	
@@ -151,7 +161,7 @@ filterEvent : function (latestTimestamp, event) {
 },
 
 getQueryForTestConnection : function () {
-	var query = "";
+	var query = "/APG-REST/events/occurrences/values?filter=severity%3D%27%25%25%27&limit=1";
 	return query;
 },
 
@@ -174,13 +184,19 @@ getResponse: function(query) {
 	//return parsed response according to the query type (such as REST or DB);
 	
 	// for example: return this.getResponseJSON(query);
+
+	return this.getResponseJSON(query);
 },
 
 getURL : function (host, query) {
 	//var port =  this.probe.getAdditionalParameter("port"); //retrieve all additional parameters unique to this Source
-	
-	var url = "";
+
+	var port =  this.probe.getAdditionalParameter("port").trim(); //retrieve all additional parameters unique to this Source
+	var protocol = this.probe.getAdditionalParameter("protocol").trim();
+
+	var url = protocol + "://" + host + ":" + port + query;
 	return url;
+	
 },
 
 
@@ -188,8 +204,12 @@ createRequest: function(query) {
 	var username =  this.probe.getParameter("username");
 	var password =  this.probe.getParameter("password");
 	var host =  this.probe.getParameter("host");
-	
+
 	var url = this.getURL(host, query);
+	ms.log("ViPRSRMJS Connector: URL is " + url);
+	var request = new HTTPRequest(url);
+	request.setBasicAuth(username, password);
+	return request;
 	
 	//return the suitable request. For example, use HTTP request:
 	// var request = new HTTPRequest(url);
@@ -208,14 +228,6 @@ getResult : function (query) {
 
 return response; // if needed, parse the response before returning. For example, can use parseToJson method
 
-},
-
-addError : function(message){
-	if (errorMessage === "")
-		errorMessage = message;
-	else
-		errorMessage += "\n" + message;
-	ms.log(message);
 },
 
 //helper method - creates HTTP request and returns the response as JSON string
@@ -252,6 +264,14 @@ parseToJSON : function (response) {
 	ms.log("Connector: Found " + resultJson.results.length + " records");
 	return resultJson;
 	
+},
+
+addError : function(message){
+	if (errorMessage === "")
+		errorMessage = message;
+	else
+		errorMessage += "\n" + message;
+	ms.log(message);
 },
 	
 type: "ViPRSRM_JS"
