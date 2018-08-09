@@ -1,4 +1,4 @@
-var ConnectorJS = Class.create();
+var ViPRSRM_JS = Class.create();
 
 var SUCCESS = Packages.com.service_now.mid.probe.tpcon.OperationStatusType.SUCCESS;
 var FAILURE = Packages.com.service_now.mid.probe.tpcon.OperationStatusType.FAILURE;
@@ -6,11 +6,11 @@ var Event   = Packages.com.snc.commons.eventmgmt.Event;
 var SNEventSenderProvider = Packages.com.service_now.mid.probe.event.SNEventSenderProvider;
 var HTTPRequest = Packages.com.glide.communications.HTTPRequest;
 
-
+var VIPR_SRM = "ViPR SRM";
 var MAX_EVENTS_TO_FETCH = 3000;
 var errorMessage = "";
 
-ConnectorJS.prototype = Object.extendsObject(AProbe, {
+ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 	
 	// test the connection with the target monitor
 	testConnection : function() {
@@ -254,6 +254,6 @@ parseToJSON : function (response) {
 	
 },
 	
-type: "ConnectorJS"
+type: "ViPRSRM_JS"
 });
 
