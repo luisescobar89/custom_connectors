@@ -77,8 +77,8 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 			var retVal = {};
 				
 				var resultArray = this.getResult(this.getQueryForExecute()); //retrieve all events from ViprSMR
-
-				ms.log("resultArray.results.length: " + resultArray.occurrences.length);
+				
+				ms.log("resultArray.occurrences.length: " + resultArray.occurrences.length);
 				
 				var events = this.getSNEvents(resultArray); //convert raw events to SN events
 				if (events == null) {
@@ -146,45 +146,46 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 				ms.log("resultArray.occurrences.length: " + resultArray.occurrences.length);
 				
 				// init all maps with additional information for events
-				var viprevents = this.getEvents();
+				var viprEvents = this.getEvents();
 				
-				ms.log("vipr events: " + viprevents);
+				ms.log("vipr events: " + viprEvents);
 				
 				// cache all requierd maps with additional information for events
 				
 				var latestTimestamp = this.probe.getParameter("last_event");
 				
 				ms.log("latestTimestamp: " + latestTimestamp);
+
+				ms.log("getSNEvents severity: " + resultArray.occurrences[0].properties.severity);
+				ms.log("getSNEvents severity1: " + resultArray.occurrences[1].properties.severity);
 				
 				var i = 0;
-				for (; i<resultArray.occurrences.length; i++) {
+				for (; i<resultArray.occurrences.length; i++) { //resultArray.occurrences.length
 					
-					var event = this.createSNEvent(resultArray.occurrences[i], viprevents); //pass also cached information if possible, for example eventTypes
+					var event = this.createSNEvent(resultArray.occurrences[i].properties, viprEvents); //pass also cached information if possible, for example eventTypes
 					
 					// filter out events on first pull
 					if (!this.filterEvent(latestTimestamp, event)) {
 						events.push(event);
 					}
 				}
-				
-				ms.log("##events: " + event);
-				ms.log("##events: " + events);
+
 				
 				return events;
 			},
 			
-			createSNEvent : function (rawEvent, viprevents) { //get all cached information as well
+			createSNEvent : function (rawEvent, viprEvents) { //get all cached information as well from get SNEvents (resultArray.occurences[i], viprEvents)
 				var event = Event();
 				
 				var emsName = this.probe.getParameter("connector_name");
 				event.setEmsSystem(emsName);
 				event.setSource(VIPR_SRM);
 				
-				ms.log("emsname: " + emsname);
+				ms.log("emsName: " + emsName);
 				ms.log("source: " + VIPR_SRM);
 				
 				if (rawEvent.timestamp != null)
-					event.setTimeOfEvent(this.parseTimeOfEvent(rawEvent.EventTime));
+					event.setTimeOfEvent(this.parseTimeOfEvent(rawEvent.properties.openedat));
 				
 				ms.log("timestamp: " + rawEvent.timestamp);
 				
@@ -192,22 +193,26 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 				var sanitizedMessage = rawEvent.fullmsg.replace(/[^\x00-\x7F]/g, " ");
 				// replace \" with "
 				sanitizedMessage = sanitizedMessage.replace(/\\"/g, "\"");
-				event.setText(sanitizedMessage);
+				//event.setText(sanitizedMessage);
 				
 				ms.log("vipr message: " + sanitizedMessage);
+
+				var viprSeverity = rawEvent.severity;
+
+				ms.log("createSNEvent Severity is: " + viprSeverity);
 				
-				var viprseverity = viprevents[rawEvent.severity];
-				var viprnode = viprevents[rawEvent.device];
+				//var viprseverity = viprEvents[rawEvent.severity];
+				//var viprnode = viprEvents[rawEvent.device];
 				
-				ms.log("vipr severity: " + viprseverity);
-				ms.log("vipr severity: " + viprnode);
+				//ms.log("vipr severity: " + viprseverity);
+				//ms.log("vipr severity: " + viprnode);
 				
 				//set all event fields
-				event.setSeverity(viprseverity); //set severity value 1-critical to 4-warning
-				event.setHostAddress(viprnode); // will be mapped to node field
-				event.setField("hostname", ""); //add additional info values
+				//event.setSeverity(viprseverity); //set severity value 1-critical to 4-warning
+				//event.setHostAddress(viprnode); // will be mapped to node field
+				//event.setField("hostname", ""); //add additional info values
 				
-				ms.log("create event: " + event);
+				//ms.log("create event: " + event);
 				
 				return event;
 			},
@@ -420,7 +425,7 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 						resultMap = [resultJson.occurrences[i].properties.severity, resultJson.occurrences[i].properties.active, resultJson.occurrences[i].properties.device, resultJson.occurrences[i].properties.fullmsg, resultJson.occurrences[i].properties.eventdisplayname, resultJson.occurrences[i].properties.timestamp];
 					
 					ms.log("vipr events: " + resultMap);
-
+					
 					return resultMap;
 				},
 				
