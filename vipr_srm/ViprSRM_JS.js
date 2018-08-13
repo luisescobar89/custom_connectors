@@ -18,20 +18,15 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 		ms.log("ViPRSRMJS testing connection");
 		
 		
-		///////////////////////////////////////////////////////
+		/////////////////////////////////////////////////////// FOR TESTING PURPOSES ONLY
 		
-		var queryvipr = this.getQueryForExecute(query);
+		//var queryvipr = this.getQueryForExecute(query);
 		
-		ms.log("queryvipr: " + queryvipr);
+		//ms.log("queryvipr: " + queryvipr);
 		
-		var responsevipr = this.getResult(queryvipr);
-		ms.log('ViPRSRMJS Connector Testing Connection responsevipr array length:' + responsevipr.occurrences.length);
-		ms.log('ViPRSRMJS Connector Testing Connection responsevipr:' + responsevipr);
-		
-		//var vipr_array = ['Jim', 'Shawna', 'Andrew', 'Lora', 'Aimee', 'Nick'];
-		
-		//ms.log("vipr_array.results.length: " + vipr_array.length);
-		//ms.log("vipr_array: " + vipr_array);
+		//var responsevipr = this.getResult(queryvipr);
+		//ms.log('ViPRSRMJS Connector Testing Connection responsevipr array length:' + responsevipr.occurrences.length);
+		//ms.log('ViPRSRMJS Connector Testing Connection responsevipr object fullmsg:' + responsevipr[0].properties.fullmsg);
 		
 		/////////////////////////////////////////////
 		var query = this.getQueryForTestConnection(query);
@@ -82,11 +77,8 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 			var retVal = {};
 				
 				var resultArray = this.getResult(this.getQueryForExecute()); //retrieve all events from ViprSMR
-				
-				ms.log("execute ResultArray" + resultArray);
-				
-				
-				
+
+				ms.log("resultArray.results.length: " + resultArray.occurrences.length);
 				
 				var events = this.getSNEvents(resultArray); //convert raw events to SN events
 				if (events == null) {
@@ -149,9 +141,9 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 				var events = [];
 				
 				// if no events were found, return
-				if (resultArray.results.length === 0)
+				if (resultArray.occurrences.length === 0)
 					return events;
-				ms.log("resultArray.results.length: " + resultArray.results.length);
+				ms.log("resultArray.occurrences.length: " + resultArray.occurrences.length);
 				
 				// init all maps with additional information for events
 				var viprevents = this.getEvents();
@@ -165,16 +157,17 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 				ms.log("latestTimestamp: " + latestTimestamp);
 				
 				var i = 0;
-				for (; i<resultArray.results.length; i++) {
+				for (; i<resultArray.occurrences.length; i++) {
 					
-					var event = this.createSNEvent(resultArray.results[i], events); //pass also cached information if possible, for example eventTypes
+					var event = this.createSNEvent(resultArray.occurrences[i], viprevents); //pass also cached information if possible, for example eventTypes
 					
 					// filter out events on first pull
-					if (!this.filterEvent(latestTimestamp, viprevents)) {
+					if (!this.filterEvent(latestTimestamp, event)) {
 						events.push(event);
 					}
 				}
 				
+				ms.log("##events: " + event);
 				ms.log("##events: " + events);
 				
 				return events;
@@ -415,9 +408,6 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 				
 				var resultJson = this.getResult(query);
 				
-				ms.log("resultJsongetEvents: " + resultJson);
-				ms.log("querygetEvents: " + query);
-				
 				if (resultJson == null)
 					return null;
 				
@@ -426,11 +416,11 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 					//access ViPRSSRM array key: resultJSON.occurrences[0].properties.severity
 					
 					var i = 0;
-					for (; i<resultJson.results.length; i++)
-						resultMap = [resultJson.occurrences[i].severity, resultJson.occurrences[i].active, resultJson.occurrences[i].device, resultJson.occurrences[i].fullmsg, resultJson.occurrences[i].eventdisplayname, resultJson.occurrences[i].timestamp];
+					for (; i<resultJson.occurrences.length; i++)
+						resultMap = [resultJson.occurrences[i].properties.severity, resultJson.occurrences[i].properties.active, resultJson.occurrences[i].properties.device, resultJson.occurrences[i].properties.fullmsg, resultJson.occurrences[i].properties.eventdisplayname, resultJson.occurrences[i].properties.timestamp];
 					
-					ms.log("resultmap: " + resultMap);
-					
+					ms.log("vipr events: " + resultMap);
+
 					return resultMap;
 				},
 				
