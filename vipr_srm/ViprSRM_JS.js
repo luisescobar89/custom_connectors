@@ -184,50 +184,46 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 				ms.log("emsName: " + emsName);
 				ms.log("source: " + VIPR_SRM);
 				
-				if (rawEvent.timestamp != null)
-					event.setTimeOfEvent(this.parseTimeOfEvent(rawEvent.properties.openedat));
+				//if (rawEvent.timestamp != null)
+					//event.setTimeOfEvent(this.parseTimeOfEvent(rawEvent.openedat));
+
+				event.setTimeOfEvent(this.parseTimeOfEvent(rawEvent.openedat));
 				
-				ms.log("timestamp: " + rawEvent.timestamp);
+				ms.log("timestamp: " + rawEvent.openedat);
 				
 				// remove not ascii chars
 				var sanitizedMessage = rawEvent.fullmsg.replace(/[^\x00-\x7F]/g, " ");
 				// replace \" with "
 				sanitizedMessage = sanitizedMessage.replace(/\\"/g, "\"");
-				//event.setText(sanitizedMessage);
-				
+				event.setText(sanitizedMessage);
 				ms.log("vipr message: " + sanitizedMessage);
 
 				var viprSeverity = rawEvent.severity;
+				var viprNode = rawEvent.viprNode;
 
-				ms.log("createSNEvent Severity is: " + viprSeverity);
+				ms.log("viprSeverity is: " + viprSeverity);
 				
-				//var viprseverity = viprEvents[rawEvent.severity];
-				//var viprnode = viprEvents[rawEvent.device];
-				
-				//ms.log("vipr severity: " + viprseverity);
-				//ms.log("vipr severity: " + viprnode);
-				
+
 				//set all event fields
-				//event.setSeverity(viprseverity); //set severity value 1-critical to 4-warning
-				//event.setHostAddress(viprnode); // will be mapped to node field
-				//event.setField("hostname", ""); //add additional info values
+				event.setSeverity(viprSeverity); //set severity value 1-critical to 5-info
+				event.setHostAddress(viprNode); // will be mapped to node field
+				event.setField("Part Type", rawEvent.parttype); //add additional info values
+
 				
-				//ms.log("create event: " + event);
-				
+
 				return event;
 			},
 			
 			parseTimeOfEvent: function (sourceTime) { //parse the time of event to GMT using the following format: yyyy-MM-dd HH:mm:ss
 				
 				// input is yyyy-MM-dd'T'HH:mm:ss.mmm. we are taking yyyy-MM-dd HH:mm:ss
-				var timeOfEvent = sourceTime.replace('T',' ');
+				var timeOfEvent = sourceTime.replace(/\//g, "-");
+				timeOfEvent = timeOfEvent.replace("CDT", " ");
 				timeOfEvent = timeOfEvent.substring(0,19);
-				ms.log("timeofevent: " + timeOfEvent);
 				return timeOfEvent;
 				
 			},
 			
-			//ignore closed and info events on first action of pulling
 			//ignore closed and info events on first action of pulling
 			filterEvent : function (latestTimestamp, event) {
 				if (latestTimestamp == null ){
