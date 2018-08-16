@@ -134,15 +134,8 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 				ms.log("resultArray.occurrences.length: " + resultArray.occurrences.length);
 				
 				// init all maps with additional information for events
-				var eventTypes = this.getEventTypes();
-				var nodes = this.getNodes();
-
-				ms.log("eventtypes: " + eventTypes);
-				ms.log("nodes: " + nodes[0]);
-
-				if (eventTypes == null || nodes == null) {
-					return null;
-				}
+				//var eventTypes = this.getEventTypes();
+				//var nodes = this.getNodes();
 				
 				// cache all required maps with additional information for events
 				
@@ -153,7 +146,7 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 				var i = 0;
 				for (; i<resultArray.occurrences.length; i++) { //resultArray.occurrences.length
 					
-					var event = this.createSNEvent(resultArray.occurrences[i].properties, eventTypes, nodes); //pass also cached information if possible, for example eventTypes
+					var event = this.createSNEvent(resultArray.occurrences[i].properties); //pass also cached information if possible, for example eventTypes
 					
 					// filter out events on first pull
 					if (!this.filterEvent(latestTimestamp, event)) {
@@ -165,7 +158,7 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 				return events;
 			},
 			
-			createSNEvent : function (rawEvent, eventTypes, nodes) { //get all cached information as well from get SNEvents (resultArray.occurences[i].properties)
+			createSNEvent : function (rawEvent) { //get all cached information as well from get SNEvents (resultArray.occurences[i].properties)
 				var event = Event();
 				
 				var emsName = this.probe.getParameter("connector_name");
@@ -173,7 +166,7 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 				event.setSource(VIPR_SRM);
 				
 				if (rawEvent.timestamp != null)
-					event.setTimeOfEvent(this.parseTimeOfEvent(rawEvent.openedat));
+					event.setTimeOfEvent(this.parseTimeOfEvent(rawEvent.lastchangedat));
 
 				
 				// remove not ascii chars
@@ -181,14 +174,8 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 				// replace \" with "
 				sanitizedMessage = sanitizedMessage.replace(/\\"/g, "\"");
 				event.setText(sanitizedMessage);
-
-				/*if (nodes[rawEvent.device] != null) { 
-					var node = nodes[rawEvent.device];
-					event.setHostAddress(node[0]); // will be mapped to node field
-					event.setField("hostname", node[1]);
-				}*/
 					
-				event.setField("eventtype", rawEvent.eventtype);
+				
 
 				var severity = rawEvent.severity; //set severity value from resultArray
 				var node = rawEvent.device; //set node value from resultArray
@@ -208,7 +195,9 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 				event.setField("sourceip", rawEvent.sourceip); //add additional info values
 				event.setField("eventstate", rawEvent.eventstate); //add additional info values
 				event.setField("openedat", rawEvent.openedat); //add additional info values
-				event.setField("lastchangedat", rawEvent.lastchangedat); //add additional info values
+				event.setField("lastchangedat", rawEvent.lastchangedat); 
+				event.setField("eventtype", rawEvent.eventtype); //add additional info values
+				event.setField("active", rawEvent.active); //add additional info values
 
 				if (resolutionState != null) {
 					 if (resolutionState == 0)
@@ -278,8 +267,8 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 				lastRun.setUTCSeconds(latestTimestamp);
 				var lastRunISO = lastRun.toISOString();
 				
-				ms.log("get query latesttimestamp: " + latestTimestamp);
-				ms.log("iso lastRun: " + lastRunISO);
+				//ms.log("get query latesttimestamp: " + latestTimestamp);
+				//ms.log("iso lastRun: " + lastRunISO);
 
 
 				var daysBack = this.probe.getAdditionalParameter("initial_sync_in_days");
@@ -288,7 +277,7 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 				var daysBackisoFormatTime = currentDate.toISOString();
 				
 				
-				var query = "filter=active%3D%271%27%7Cactive%3D%270%27" +
+				var query = "filter=severity%3D%271%27%7Cseverity%3D%272%27%7Cseverity%3D%273%27%7Cseverity%3D%274%27" +
 				"&limit=" + MAX_EVENTS_TO_FETCH +
 				"&properties=device,devtype,parttype,part,timestamp,severity,location,eventdisplayname,fullmsg,active,eventstate,eventname,acknowledged,eventtype,sourceip,partdisplayname,openedat,closedat,lastchangedat";
 
@@ -412,51 +401,6 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 				
  				*/
 				
-			},
-
-			getEventTypes : function () {
-				
-				//var query = this.getQueryForExecute(query);
-
-				var query = "filter=active%3D%271%27%7Cactive%3D%270%27&properties=severity,eventdisplayname,eventstate,eventtype,sourceip,eventtype,eventtext,eventname";
-				
-				var resultJson = this.getResult(query);
-				
-				if (resultJson == null)
-					return null;
-				
-				var resultMap = {};
-					
-					//access ViPRSSRM array key: resultJSON.occurrences[0].properties.severity
-					
-					var i = 0;
-					for (; i<resultJson.occurrences.length; i++)
-						resultMap[resultJson.occurrences[i].properties.eventtype] = [resultJson.occurrences[i].properties.severity, resultJson.occurrences[i].properties.eventname];
-					
-					return resultMap;
-			},
-
-			getNodes : function () {
-				
-
-				var query = "filter=active%3D%271%27%7Cactive%3D%270%27&properties=device,devicetype";
-				
-				var resultJson = this.getResult(query);
-				
-				if (resultJson == null)
-					return null;
-				
-				var resultMap = {};
-					
-					//access ViPRSSRM array key: resultJSON.occurrences[0].properties.severity
-					
-					var i = 0;
-					for (; i<resultJson.occurrences.length; i++)
-						resultMap[resultJson.occurrences[i].properties.device] = [resultJson.occurrences[i].properties.devicetype];
-					
-					ms.log("nodes: " + resultMap[0]);
-					
-					return resultMap;
 			},
 				
 				addError : function(message){
