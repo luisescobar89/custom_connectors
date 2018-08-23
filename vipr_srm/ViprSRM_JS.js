@@ -7,7 +7,7 @@ var SNEventSenderProvider = Packages.com.service_now.mid.probe.event.SNEventSend
 var HTTPRequest = Packages.com.glide.communications.HTTPRequest;
 
 var VIPR_SRM = "ViPR SRM";
-var MAX_EVENTS_TO_FETCH = 1000;
+var MAX_EVENTS_TO_FETCH = 3000;
 var errorMessage = "";
 
 ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
@@ -198,6 +198,7 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 				event.setField("lastchangedat", rawEvent.lastchangedat); 
 				event.setField("eventtype", rawEvent.eventtype); //add additional info values
 				event.setField("active", rawEvent.active); //add additional info values
+				event.setField("id", rawEvent.id); //add additional info values
 
 				if (resolutionState != null) {
 					 if (resolutionState == 0)
@@ -256,16 +257,19 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 			},
 			
 			getQueryForTestConnection : function () {
-				var query = "filter=active%3D%271%27%7Cactive%3D%270%27";
+				var query = "filter=active%3D%271%27%7Cactive%3D%270%27&limit=1";
 				return query;
 			},
 			
 			getQueryForExecute : function () {
 				
 				var latestTimestamp = this.probe.getParameter("last_event");
+
+				if (latestTimestamp != null) {
 				var lastRun = new Date(0); // The 0 there is the key, which sets the date to the epoch
 				lastRun.setUTCSeconds(latestTimestamp);
 				var lastRunISO = lastRun.toISOString();
+				}
 				
 				//ms.log("get query latesttimestamp: " + latestTimestamp);
 				//ms.log("iso lastRun: " + lastRunISO);
@@ -279,7 +283,7 @@ ViPRSRM_JS.prototype = Object.extendsObject(AProbe, {
 				
 				var query = "filter=severity%3D%271%27%7Cseverity%3D%272%27%7Cseverity%3D%273%27%7Cseverity%3D%274%27" +
 				"&limit=" + MAX_EVENTS_TO_FETCH +
-				"&properties=device,devtype,parttype,part,timestamp,severity,location,eventdisplayname,fullmsg,active,eventstate,eventname,acknowledged,eventtype,sourceip,partdisplayname,openedat,closedat,lastchangedat";
+				"&properties=device,devtype,parttype,part,timestamp,severity,location,eventdisplayname,fullmsg,active,eventstate,eventname,acknowledged,eventtype,sourceip,partdisplayname,openedat,closedat,lastchangedat,id";
 
 				//differ between first action of pulling and other
 				if (latestTimestamp != null) {
